@@ -161,11 +161,25 @@ A reentrancy attack is when an unexpected (external) call is inserted into a nor
 
 **Explanation**:
 
-Move performs overflow checks during mathematical operations, and transactions with overflow will fail. However, bitwise operations do not undergo such checks.
+Move performs overflow checks during mathematical operations, and transactions with overflow will fail. However, bitwise operations do not undergo such checks. Additionally, custom overflow detection functions may have flaws that lead to value truncation issues.
 
 **Positioning**:
 
-Identify locations in the code where bitwise operations are performed and check for potential overflow risks.
+- Identify locations in the code where bitwise operations are performed and check for potential overflow risks.
+- Check threshold settings and boundary condition judgments in custom overflow detection functions.
+- Verify whether bit shift operations may exceed the maximum value of the target type and be truncated.
+
+```move
+// Error example
+public fun checked_shlw(n: u256): (u256, bool) {
+    let mask = 0xffffffffffffffff << 192;  // ❌ Wrong mask - any value less than `0xffffffffffffffff << 192` can pass through
+    if (n > mask) {                         // ❌ Wrong condition
+        (0, true)
+    } else {
+        ((n << 64), false)                  // ⚠️ Left shift overflow gets truncated
+    }
+}
+```
 
 ## Arithmetic Accuracy Deviation Audit
 
